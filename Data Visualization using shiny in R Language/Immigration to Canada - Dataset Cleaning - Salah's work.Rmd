@@ -1,0 +1,82 @@
+---
+title: "Immigration to Canada - Dataset Cleaning"
+author: "Group C"
+date: "12/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### This dataset presents the annual counts of international immigrants to Canada from 1980 - 2013. It was downloaded from the International migration flows to and from selected countries - The 2015 revision.
+
+#### Step 1 - Import the necessary libraries 
+
+```{r}
+library('readxl')
+library('dplyr')
+```
+
+#### Step 2 - Reading the original dataset
+
+```{r}
+OriginalDF <- read_excel("/Users/salahkaf/Desktop/Principle\ Project/Canada.xlsx", sheet ="Canada by Citizenship",skip = 20) # We removed the first 20 rows as they are metadata about the dataset.
+```
+
+#### Step 3 - Get some basic understanding about the dataset.
+
+```{r}
+head(OriginalDF) #Shows the first 6 rows
+tail(OriginalDF) #Shows the last 6 rows
+dim(OriginalDF) #Shows the dimensions of it
+str(OriginalDF) #Shows the structure of it
+summary(OriginalDF) #Shows the summary of it
+```
+#### Step 4 - Checking for missing values
+
+```{r}
+# Total number of missing values in the dataset
+cat("The total number of missing values in the dataset is" , sum(is.na(OriginalDF)))
+
+# Total number of missing values in the dataset per column name
+colSums(is.na(OriginalDF)) 
+
+# Total number of missing values in the dataset per column index
+for (i in 1:ncol(OriginalDF)) {
+x <- sum(is.na(OriginalDF[i]))
+cat("Number of missing values in col ", i, " = ", x, "\n")
+}
+```
+
+# Step 5 - Making all columns names as charectar 
+
+```{r}
+names(OriginalDF) <- as.character(unlist(names(OriginalDF)))
+class(names(OriginalDF)) #Checking the class is character
+```
+
+# Step 6 - Selecting the necessary columns for analysis
+```{r}
+UpdatedDF <- select(OriginalDF, OdName, AreaName, RegName,DevName, "1980":"2013")
+head(UpdatedDF)
+```
+# Step 7 - Modify the name of columns
+
+```{r}
+names(UpdatedDF)[1:3] <- c("Country", "Continent", "Region")
+head(UpdatedDF)
+```
+# Step 8 - Add Total column at the end
+
+```{r}
+UpdatedDF <- mutate(UpdatedDF, Total=apply(UpdatedDF[-c(1:4)],1,sum))
+```
+
+# Step 9 - Export the cleaned dataset
+```{r}
+write.csv(UpdatedDF,"/Users/salahkaf/Desktop/UpdatedDF.csv",row.names = F)
+```
+
+
+

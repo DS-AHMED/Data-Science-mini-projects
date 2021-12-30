@@ -1,0 +1,58 @@
+---
+title: "Canada EDA Visualization - Regplot"
+author: "Group C"
+date: "12/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Exploratory Question Analysis
+#### Q6 - Which countries in the future will have more immigrants, and which will have less? Visualized by Scatter plot and regression plots used to observe the immigration patterns.
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyverse) #For data manipulation and ggplot
+library(dplyr) #For data manipulation
+library(ggpubr) #For sub plotting
+```
+
+#### Import the Dataset
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+head(DF)
+```
+
+
+
+#### Select a country or total as an option
+```{r}
+Q6DF <- DF[DF$Country=="China",5:38] #Here "Total" is the user input, the purpose is to automate this option
+Q6DF
+```
+
+#### Data wrangling
+```{r}
+#### Transposing the subsetted dataset
+Q6DF <- gather(Q6DF,Year,Total,1:34) #Transposing the dataset 
+Q6DF$Year<-gsub("X","",as.character(Q6DF$Year)) #Removing X from years
+Q6DF$Year <- as.integer(Q6DF$Year)
+Q6DF #Final DF ready to be plotted
+```
+
+```{r}
+Q6Regplot <- ggplot(data = Q6DF, aes(x= Year, y=Total)) +
+geom_point() +
+  geom_smooth(method="lm") +
+  scale_x_discrete(breaks = seq(1980, 2013, by = 2)) + #A jump of 2 years
+  scale_y_continuous(breaks = seq(10000, 50000, by = 5000)) +
+  ggtitle("Linear Regression plot") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Years") + ylab("Number of Immigrants")
+Q6Regplot
+```
+

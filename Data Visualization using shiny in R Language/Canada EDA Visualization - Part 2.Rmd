@@ -1,0 +1,112 @@
+---
+title: "Canada EDA Visualization - Pie plot and line plot"
+author: "Group C"
+date: "12/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Descriptive Analysis Question
+#### Q2 - How many total immigrants to Canada by continent from 1980 to 2013. Visualized by pie and line charts.
+
+#### Part 1 - Pie Chart
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyverse) #For data manipulation and ggplot
+library(dplyr) #For data manipulation
+library(ggpubr) #For sub plotting
+```
+
+#### Import the Dataset
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+head(DF)
+```
+
+#### Wrangling the table part 1
+
+```{r}
+DF <- DF[-c(196,197),] #Remove last two rows as they do not have a continent
+Q2DF1 <- tapply(DF$Total,DF$Continent,sum) #Sum total immigrants per continent
+Q2DF1 <- as.data.frame.table(Q2DF1) #Convert it to a data frame
+Q2DF1
+```
+# Wrangling the table part 2
+
+```{r}
+names <- c("Africa", "Asia", "Europe", "Latin America and the Caribbean","Northern America","Oceania") #Names of the continents
+percentage <- round(Q2DF1$Freq/sum(Q2DF1$Freq)*100,2) #Count the percentage of each Continent
+lebals <- paste(names, percentage) # add percents to labels 
+lebals <- paste(lebals,"%",sep="") # add % to labels 
+Q2DF1$Continent <- lebals #Add the labels as a new column "Continent"
+Q2DF1<- Q2DF1[,-1] #Remove the old column of names
+names(Q2DF1)[1] <- "Total" #Rename Freq to Total
+Q2DF1 #Final DF for part 1
+```
+#### Plot the Pie Chart
+
+```{r}
+Q2plot_Pie <- ggplot(Q2DF1, aes(x="", y=Total, fill=Continent)) +
+  geom_bar(stat="identity", width=1, color="White") +
+  coord_polar("y", start=0) + 
+  ggtitle("Percentage of Immigrants per Continent [1980-2013]") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme_void() # remove background, grid, numeric labels
+Q2plot_Pie
+```
+
+#### Line plot of [Total number of immigrants per continant from 1980 to 2013]
+
+#### Creating a suitable DF for the line plot - Part A
+
+```{r}
+Continent <- c("Africa","Asia","Europe","Latin America and the Caribbean","Northern America","Oceania")
+Q2DF2 <- data.frame(Continent)
+Q2DF2
+```
+
+```{r}
+years <- names(DF[,-c(1,2,3,4,39)]) #Keeping only the years columns
+
+# looping through each column and sum number of immigrants per continent
+for (col in years) {
+summation <- tapply(DF[,col],DF$Continent,sum) #Sum total immigrants per continent for each year
+Q2DF2[col] <- summation
+}
+Q2DF2
+```
+
+#### Creating a suitable DF for the line plot - Part B
+
+```{r}
+Q2DF2 <- Q2DF2[Q2DF2$Continent=="Africa",2:35] #Here "Africa" is the user input, the purpose is to automate this option
+Q2DF2
+```
+#### The steps of line plot is repeated as before in Q1
+#### Transposing the subsetted dataset
+
+```{r}
+Q2DF2 <- gather(Q2DF2,Year,Total,1:34) #Transposing the dataset 
+Q2DF2$Year <- gsub("X","",as.character(Q2DF2$Year)) #Removing X from years
+Q2DF2 #Final DF ready to be plotted
+```
+
+```{r}
+#### Plotting Code - Line plot
+Q2plot_line <- ggplot(data=Q2DF2, aes(x=Year, y=Total, group=1)) +
+  geom_line(color = "Green")+ #Draw a line
+  geom_point() + #Draw points 
+   scale_x_discrete(breaks = seq(1980, 2013, by = 5))+ #A jump of 5 years
+   scale_y_continuous(breaks = seq(10000, 50000, by = 5000)) +
+  ggtitle("Number of Immigrants per Year") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Years") + ylab("Number of Immigrants")
+Q2plot_line
+```
+

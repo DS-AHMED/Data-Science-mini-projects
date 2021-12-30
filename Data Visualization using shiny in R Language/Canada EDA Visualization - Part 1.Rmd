@@ -1,0 +1,85 @@
+---
+title: "Canada EDA Visualization - Line and Bar plot"
+author: "Group C"
+date: "12/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Descriptive Analysis Question
+#### Q1 - How many total immigrants to Canada from 1980 to 2013. Visualized by line and bar charts.
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyverse) #For data manipulation and ggplot
+library(dplyr) #For data manipulation
+library(ggpubr) #For sub plotting
+```
+
+#### Import the Dataset
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+head(DF)
+```
+
+#### Select a "country" or "total" as an input option
+
+```{r}
+Q1DF <- DF[DF$Country=="Total",5:38] #Here "Total" is as the user input, the purpose here is to automate this option, like if he/she chooses "China, or India etc."
+Q1DF
+```
+#### Transposing the subsetted dataset
+
+```{r}
+Q1DF <- gather(Q1DF,Year,Total,1:34) #Transposing the dataset 
+Q1DF$Year<-gsub("X","",as.character(Q1DF$Year)) #Removing X from years
+Q1DF #Final DF ready to be plotted
+```
+#### Plotting Code - Line plot
+
+```{r}
+Q1plot_line <- ggplot(data=Q1DF, aes(x=Year, y=Total, group=1)) +
+  geom_line(color="darkred")+ #Draw a line
+  geom_point() + #Draw points 
+   scale_x_discrete(breaks = seq(1980, 2013, by = 5))+ #A jump of 5 years
+   scale_y_continuous(breaks = seq(10000, 300000, by = 10000)) + #Scale y axis
+  ggtitle("Number of Immigrants per Year") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Years") + ylab("Number of Immigrants")
+Q1plot_line
+```
+
+###Plotting Code - Bar plot
+
+```{r}
+Q1plot_bar <- ggplot(data=Q1DF, aes(x=Year,y=Total)) +
+  geom_bar(stat= "identity",fill="#56B4E9") + 
+  scale_x_discrete(breaks = seq(1980, 2013, by = 5)) +  #A jump of 5 years
+  scale_y_continuous(breaks = seq(10000, 300000, by = 10000)) +
+  ggtitle("Number of Immigrants per Year") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Years") + ylab("Number of Immigrants")
+Q1plot_bar
+```
+
+#### For combining them in one plot (subplotting)
+
+```{r}
+ A <- ggarrange(Q1plot_line, Q1plot_bar,
+          labels = c("A", "B"),
+           ncol = 2, nrow = 1)
+A
+```
+
+#### To save the plot as PDF
+
+```{r}
+# pdf("ggplot.pdf")
+# print(A)  
+# dev.off() 
+```

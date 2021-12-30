@@ -1,0 +1,67 @@
+---
+title: "Data Cleaning"
+author: "Ahmad Abdalla"
+date: "12/18/2021"
+output: html_document
+---
+## Importing the required libraries
+```{r}
+library("readxl")
+library("dplyr")
+```
+## Reading the data excel file
+
+```{r}
+sheet2 <- read_excel("C:/ahmed/UM/University Of Malaya/YEAR 1 # FIRST SEMESTER/Principle of Data Science/Project/Dataset/Canada.xlsx",
+           sheet ="Canada by Citizenship" )
+```
+## Removing unnecessary rows
+```{r}
+sheet2 <- sheet2[-(1:15),]
+names(sheet2) <- as.character(unlist(sheet2[1,]))
+sheet2 <- sheet2[-1,]
+```
+## removing unnecessary coloumns
+```{r}
+sheet2 <- select(sheet2, OdName, AreaName, RegName,DevName, "1980":"2013")
+```
+## Converting the data into a data frame format 
+```{r}
+sheet2 <- as.data.frame(sheet2)
+```
+## Modifying the names of the columns
+
+```{r}
+names(sheet2)[1:4] <- c("Country", "Continent", "Region","DevName" )
+```
+## Adding a "Total" column to sum the vlues 
+
+```{r}
+Total <- apply(sheet2[-(1:4)], 1, sum)
+sheet2 <- mutate(sheet2, Total = Total)
+```
+## adding "X" before each year column
+
+```{r}
+colnames(sheet2)[c(-(1:4), -39)] <- paste("X", colnames(sheet2)[c(-(1:4), -39)], sep = "")
+```
+## Modifying row 44 country name
+```{r}
+sheet2[44,1] <- "CÃ´te d'Ivoire"
+
+```
+## checking if the cleaned dataset maches our new dataset
+```{r}
+cleaned <- read.csv("C:/ahmed/UM/University Of Malaya/YEAR 1 # FIRST SEMESTER/Principle of Data Science/Project/Dataset/canadian_immegration_data.csv")
+setdiff(sheet2, cleaned)
+```
+## Viewing the data
+```{r}
+View(sheet2)
+```
+## exporting the data frame 
+```{r}
+New_DataFrame <- sheet2
+write.csv(New_DataFrame,"C:/ahmed/UM/University Of Malaya/YEAR 1 # FIRST SEMESTER/Principle of Data Science/Project/Dataset/New_DataFrame.csv",row.names = F)
+
+```

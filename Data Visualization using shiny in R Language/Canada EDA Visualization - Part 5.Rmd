@@ -1,0 +1,76 @@
+---
+title: "Canada EDA Visualization - box plot"
+author: "Group C"
+date: "12/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Descriptive Analysis Question
+#### Q5 - What are the minimum, median, maximum, inter quartile range, and outlier values for immigrants to Canada from 1980 to 2013 per decade. Visualized by box plot
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyr) #For data manipulation and ggplot
+library(dplyr) #For data manipulation
+library(ggpubr) #For sub plotting
+```
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+```
+
+#### Wrangling the table part 1
+
+```{r}
+total_decade80s = vector(mode = "list") # creating empty lists to append the values for each year using for loop
+
+total_decade90s = vector(mode = "list")
+total_decade2000s = vector(mode = "list")
+Years20s <- for (country in DF$Country) {
+  a <- select(filter(DF, Country == country), X2000:X2009 )
+  total <- apply(a, 1, sum)
+  total_decade2000s <- append(total_decade2000s, total)
+}
+
+Years90s <- for (country in DF$Country) {
+  a <- select(filter(DF, Country == country), X1990:X1999 )
+  total <- apply(a, 1, sum)
+  total_decade90s <- append(total_decade90s, total)
+}
+
+Years80s <- for (country in DF$Country) {
+  a <- select(filter(DF, Country == country), X1980:X1989 )
+  total <- apply(a, 1, sum)
+  total_decade80s <- append(total_decade80s, total)
+}
+```
+
+#### Wrangling the table part 2
+```{r}
+total_decade <- as.data.frame(cbind(DF$Country, total_decade80s,total_decade90s,total_decade2000s)) # making a data frame using the appended lists
+total_decade <- total_decade[-nrow(total_decade),] #deleting the total row
+names(total_decade) <- c("Country", "1980s", "1990s", "2000s") 
+total_decade$`1980s` <- as.integer(total_decade$`1980s`) # changing the values of each column to integer 
+total_decade$`1990s` <- as.integer(total_decade$`1990s`)
+total_decade$`2000s` <- as.integer(total_decade$`2000s`)
+total_decade
+total_decade <- filter(total_decade , `1980s`<1000 & `1990s`<1000 & `2000s`<2500 ) #filtering the data to avoid outliers 
+total_decade <- gather(total_decade, Decades, value, 2:4) #reshaping the data to a from suitable for box plotting
+total_decade
+```
+
+#### Plot the boxplot graph
+```{r}
+Q5plot_box <- ggplot(total_decade, aes(x = Decades, y = value, fill = Decades)) +
+  geom_boxplot(aes(x=country, y=value)) +
+  coord_cartesian(ylim = c(0,1500)) +
+  ggtitle("Number of Immigrants for each decade") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  xlab("decades") + ylab("Number of Immigrants") 
+Q5plot_box 
+```

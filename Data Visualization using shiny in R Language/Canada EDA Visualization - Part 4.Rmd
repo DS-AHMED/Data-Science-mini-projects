@@ -1,0 +1,95 @@
+---
+title: "Canada EDA Visualization - Multiple Line Plots"
+author: "Group C"
+date: "12/21/2021"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Descriptive and Exploratory Question Analysis
+#### Q4 - What are the immigrants counts for the top 5 immigrants countries from 1980 - 2013 Visualized by line charts and area plot.
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyverse) #For data manipulation and ggplot
+library(dplyr) #For Data manipulation
+library(ggpubr) #For sub plotting
+```
+
+#### Import the Dataset
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+head(DF)
+```
+
+#### Cleaning the dataset
+
+```{r}
+DFQ4 <- DF[-c(196,197),] # Removing "unknown" and "Total" rows
+```
+
+#### Sorting by descending order to find top 5
+
+```{r}
+DFtop5 <- arrange(DFQ4,desc(Total))
+DFtop5 <- DFtop5[1:5,c(1,5:38)]
+DFtop5
+```
+
+#### Manipulate the table to make it suitable for visualization 
+
+```{r}
+Q4DF <- t(DFtop5) #Take the transpose of df
+Q4DF <- as.data.frame(Q4DF) #Convert the transposed data into data frame
+Q4DF <- cbind(Year = rownames(Q4DF), Q4DF) #Make the index as a column
+rownames(Q4DF) <- 1:nrow(Q4DF) #Create a new index
+Q4DF$Year<-gsub("X","",as.character(Q4DF$Year)) #Removing X from years
+Q4DF <- Q4DF[-1,] #Remove the unnecessary column
+colnames(Q4DF) <- c("Year","India","China","UK","Philippines","Pakistan") #Rename the columns
+#Make all columns as integer data type
+for (i in 1:ncol(Q4DF)) {
+Q4DF[,i] <- as.integer(Q4DF[,i])
+}
+Q4DF #Final DF
+```
+
+#### Plotting the dataset
+
+```{r}
+colors <- c("India", "China", "UK","Philippines","Pakistan")
+
+Q4plot_multiplelines <- ggplot(data = Q4DF, aes(x= Year, group = 1)) + 
+  geom_line(aes(y = India, color = "India"),linetype="twodash") + 
+  geom_line(aes(y = China,color = "China"),linetype="twodash") +
+  geom_line(aes(y= UK, color = "UK"),linetype="twodash") +
+  geom_line(aes(y= Philippines, color = "Philippines"),linetype="twodash") +
+  geom_line(aes(y= Pakistan, color = "Pakistan"),linetype="twodash") +
+  scale_x_continuous(breaks = seq(1980, 2013, by = 5))+ #A jump of 5 years
+  scale_y_continuous(breaks = seq(10000, 50000, by = 10000)) +
+  ggtitle("Number of Immigrants per Year") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x = "Year",y = "Immigrants") 
+Q4plot_multiplelines
+```
+
+#### Plot Area plot 
+
+```{r}
+Q4plotarea <- ggplot(data = Q4DF, aes(x=Year,group = 1)) +
+geom_area(aes(y= India, fill='India',alpha= 0.65)) +
+geom_area(aes(y= China,fill='China',alpha= 0.65)) +
+geom_area(aes(y= UK,fill= 'UK',alpha= 0.65)) +
+geom_area(aes(y= Philippines,fill= 'Philippines',alpha= 0.65)) +
+geom_area(aes(y= Pakistan,fill= 'Pakistan',alpha= 0.65)) +
+scale_x_continuous(breaks = seq(1980, 2013, by = 5))+ #A jump of 5 years
+scale_y_continuous(breaks = seq(10000, 50000, by = 10000)) +
+ggtitle("Number of Immigrants per Year") +
+theme(plot.title = element_text(hjust = 0.5))+
+labs(x = "Year",y = "Immigrants") 
+Q4plotarea
+```
+

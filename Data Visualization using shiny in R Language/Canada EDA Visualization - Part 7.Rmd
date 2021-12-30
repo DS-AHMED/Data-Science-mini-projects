@@ -1,0 +1,83 @@
+---
+title: 'Canada EDA Visualization - Cloud & Waffle Charts'
+author: "Group C"
+date: "12/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Exploratory Question Analysis
+#### Q7 - Which countries would have a dominant immigrants’ population? Visualized by waffle chart and word cloud.
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyr) #For data manipulation and ggplot
+library(dplyr) #For data manipulation
+library(ggpubr) #For sub plotting
+library(waffle) # for plotting waffle chart
+library(wordcloud) # for plotting word cloud
+```
+
+#### Import the Dataset
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+head(DF)
+```
+
+
+#### Wrangling the table part 1
+
+```{r}
+Q7DF <- DF[c("Country", "Total")] #Choosing these two columns only
+Q7DF <- Q7DF[-c(nrow(Q7DF), nrow(Q7DF)-1),] # removing the last two rows ["Unknown" "Total"]
+
+```
+
+#### Plot the word cloud
+
+```{r}
+Q7Word_plot <- wordcloud(words = Q7DF$Country, freq = Q7DF$Total, min.freq = 1,
+          max.words=2000, random.order=FALSE, rot.per=0.35,
+          colors=brewer.pal(8, "Dark2"))
+Q7Word_plot
+```
+
+
+#### Wrangling the table part 2
+
+```{r}
+Q7DF2 <-arrange(Q7DF, desc(Total))
+Q7DF2 <- Q7DF2[1:8,] #Choosing the first 8 rows >> top 8
+Q7DF2$Total <- Q7DF2$Total%/%10000 # scaling down the values by a factor of 10000 to be plottable 
+Q7DF2
+waffle_list <- split(Q7DF2$Total, Q7DF2$Country ) # used split() to make a list that contains countries names and their values which is the total number of immigrants
+waffle_list <- unlist(waffle_list) # unlist the data because waffle() doesn't support lists
+```
+
+#### Plot the waffle chart
+
+```{r}
+waffle(waffle_list)
+```
+
+#### selecting individual countries for waffle chart
+
+```{r}
+Q7DF3 <- filter(Q7DF, Total >100) 
+Q7DF3 <- filter(Q7DF3, Country %in% c("India" ,"China", "Sudan")) # the chosen countries ## To be automated
+Q7DF3$Total <- Q7DF3$Total%/%min(Q7DF3$Total)
+waffle_list2 <- split(Q7DF3$Total, Q7DF3$Country ) # used split() to make a lsit that contains countries names and their values which is the total number of immigrants
+waffle_list2 <- unlist(waffle_list2) # unlist the data because waffle() doesn't support lists
+```
+
+#### Plot the waffle chart for three chosen countries
+
+```{r}
+Q7waffle <- waffle(waffle_list2)
+Q7waffle 
+```

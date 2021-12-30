@@ -1,0 +1,85 @@
+---
+title: "Canada EDA Visualization - box plot, line plot and bar plot"
+author: "Group C"
+date: "12/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Descriptive Analysis Question
+#### Q3 - How many immigrants to Canada by country from 1980-2013. Visualized by line charts, bar chart and box plot.
+
+#### Import the necessary libraries
+
+```{r}
+library(tidyr) #For data manipulation and ggplot
+library(dplyr) #For data manipulation
+library(ggpubr) #For sub plotting
+```
+
+#### Import the Dataset
+
+```{r}
+DF <- read.csv('/Users/salahkaf/Desktop/UpdatedDF.csv') #Reading the DF
+head(DF)
+```
+
+
+#### Wrangling the table part 1
+
+```{r}
+Q3DF <- DF[DF$Country=="Haiti",5:38] #Here "Total" is the user input, the purpose is to automate this option
+Q3DF <- gather(Q3DF,Year,Total,1:34) #Transposing the dataset 
+Q3DF$Year<-gsub("X","",as.character(Q3DF$Year)) #Removing X from years
+Q3DF #Final DF ready to be plotted
+```
+
+#### Plot the line graph
+
+```{r}
+Q3plot_line <- ggplot(data=Q3DF, aes(x=Year, y=Total, group=1)) +
+  geom_line(color='darkred')+ #Draw a line
+  geom_point(color="Blue") + #Draw points 
+  scale_x_discrete(breaks = seq(1980, 2013, by = 5))+ #A jump of 5 years
+  ggtitle("Number of Immigrants per Year") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Years") + ylab("Number of Immigrants")
+Q3plot_line
+```
+
+#### Plot the bar graph
+
+```{r}
+Q3plot_bar <- ggplot(data=Q3DF, aes(x=Year,y=Total)) +
+  geom_bar(stat= "identity", fill= "black",color="white")   + 
+  scale_x_discrete(breaks = seq(1980, 2013, by = 5)) +  #A jump of 5 years
+  ggtitle("Number of Immigrants per Year") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  xlab("Years") + ylab("Number of Immigrants")
+Q3plot_bar
+```
+
+#### Wrangling the table part 2
+
+```{r}
+one_country <- DF[DF$Country == "Chad"] #This must be automated (User input)
+one_country <- one_country[-nrow(one_country),]
+one_country <- as.data.frame(one_country)
+one_country
+```
+
+#### Plot the boxplot graph
+
+```{r}
+Q3plot_box <- ggplot(data = one_country, aes(x = "", y = one_country)) + 
+  geom_boxplot(fill="white") +
+  coord_cartesian(ylim = c(0,10000)) + # I set the y axis scale so the plot looks better.
+  ggtitle("Number of Immigrants distributed by a box plot") +
+    theme(plot.title = element_text(hjust = 0.5))+
+  xlab("chosen country") + ylab("Number of Immigrants")
+Q3plot_box
+```
+
