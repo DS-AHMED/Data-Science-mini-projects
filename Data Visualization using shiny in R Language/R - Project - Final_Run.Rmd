@@ -1,0 +1,356 @@
+---
+title: "Classification & Regression Models for Breast Cancer Predictive Analysis"
+author: "Ahmed, Salah, Luqman"
+date: "1/14/2022"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo = F}
+library(magick) # To insert images 
+```
+
+## Introduction
+```
+One of the most common types of cancer is breast cancer, it accounts for 25% of cancer cases among women.
+The way it starts is when breast cells start to grow uncontrollably, they then form a tumer
+that can either be seen through x-ray tests or felt as lumps in the chest area. 
+```
+## Objectives
+```
+Our main goal is to analyse the data set to extract some useful insights that can lead to data driven decisions.
+The scope is to use the correlation between the breast cancer data set features
+to predict whether a patient has a benign (not harmful) tumor or malignant (cancerous) tumor.
+```
+## Process Methodology Flowchart 
+```{r,echo = F}
+Figure1 <- image_read('/Users/salahkaf/Desktop/intro.png')
+Figure1
+```
+
+```
+Used Libraries.
+```
+```{r}
+library(tidyverse) #For tidying the data
+library(skimr) #It is designed to provide summary statistics about variables in data frames
+library(ggplot2) #For plotting
+library(RColorBrewer) #For aesthetics
+library(tidymodels) #For splitting the data and training
+library(caret) #For machine learning
+library(party) #The core of the package is ctree()
+library(yardstick) #For plotting the confusion matrix
+```
+
+### Importing The Data Set
+
+```{r}
+df <- read.csv("/Users/salahkaf/Desktop/breast_cancer_1.csv")
+```
+
+### Details about the Dataset
+```
+Title: Breast Cancer Wisconsin (Diagnostic) Data Set
+Last Update: 2021-12-29
+Purpose: Analysing this data set aims to protect women from breast cancer.
+The analysis is accomplished by using classification and regression models
+to predict the cancer before its occurring to take the necessary measurements to prevent it.
+Link: https://www.kaggle.com/uciml/breast-cancer-wisconsin-data
+```
+### Dataset Dimentions and Content
+
+```{r}
+dim(df) # dimension of the dataset
+names(df) # column names
+```
+
+### Dataset Structure and Summary
+
+```{r}
+str(df) # structure of the data
+summary(df) # Summary of each column in the data
+```
+
+```
+We observe from summary that we have missing values in our data set, we need to tidy this part.
+```
+
+### Preparing Data for Analysis by Checking for Missing Values & Replacing Them.
+
+```{r}
+any(is.na(df)) # To confirm if there is NAs values in the data
+colnames(df) <- str_to_lower(colnames(df)) # Changing all columns names to lowercase
+# Finding the columns that has NA values
+colSums(is.na(df))
+```
+
+### Replacing NA Values in Numeric Columns by The Mean
+
+```{r}
+# Replacing the values of these columns by the mean
+df$radius_mean[is.na(df$radius_mean)] <- mean(df$radius_mean, na.rm = TRUE)
+df$concave.points_mean[is.na(df$concave.points_mean)] <- mean(df$concave.points_mean,na.rm = TRUE)
+df$smoothness_se[is.na(df$smoothness_se)] <- mean(df$smoothness_se, na.rm = TRUE)
+df$texture_worst[is.na(df$texture_worst)] <- mean(df$texture_worst, na.rm = TRUE)
+df$symmetry_worst[is.na(df$symmetry_worst)] <- mean(df$symmetry_worst, na.rm = TRUE)
+# checking again if there is any NA values in the numeric columns
+colSums(is.na(df))
+```
+
+### Replacing NA Values in Character Columns by The Mode.
+
+```{r}
+# the only columns that is character is "diagnosis"
+# this is a function to find the mode in a column
+calc_mode <- function(x)
+  {
+  # List the distinct / unique values
+  distinct_values <- unique(x)
+  # Count the occurrence of each distinct value
+  distinct_tabulate <- tabulate(match(x, distinct_values))
+  # Return the value with the highest occurrence
+  distinct_values[which.max(distinct_tabulate)]
+  }
+```
+
+```{r}
+# replacing the NA values by the mode
+df <- df %>% 
+  mutate(diagnosis = if_else(is.na(diagnosis), 
+                         calc_mode(diagnosis), 
+                         diagnosis))
+# checking again for NA values in the data.
+any(is.na(df)) #Should Be FALSE
+```
+
+
+## Statistical Analysis Questions
+```
+Q1- How to predict a breast tumor is malignant or benign? (Classification problem)
+Q2- How to predict the mean of the lobes radius of breast cancer tumor? (Regression Problem)
+ Making a copy of the Data set for classification manipulation
+```
+```{r}
+df_c <- df
+```
+
+## Question 1 - Is The Tumor Malignant or Benign?
+### EDAs
+### Extracting Some Useful Information About Each Column
+```{r}
+skim_without_charts(df_c) # extracting useful summary statistics
+```
+
+### Figure 1: Bar Chart for The Mumber of Benign and Malignant Tumors
+
+```{r}
+df_c %>% count(diagnosis) # count the number of benign and malignant samples
+# setting diagnosis column to factor for plotting and modeling
+df_c$diagnosis <- as.factor(df_c$diagnosis)
+# plotting the bar plot
+ggplot(df_c, aes(x=diagnosis, fill= diagnosis)) +
+geom_bar(stat="count") +
+theme_classic() +
+scale_y_continuous(breaks = seq(0, 400, by = 25)) +
+labs(title="Distribution of Diagnosis")
+
+```
+
+### Figure 2: Boxplot for the Radium Mean of The Tumors Vs The Diagnosis
+```{r}
+fig2 <- df_c[c("radius_mean", "diagnosis")]
+# plotting the box plot
+ggplot(fig2, aes(diagnosis, radius_mean, fill = diagnosis)) + 
+  geom_boxplot()+
+  labs(col="Type of The Tumor") + ylab("lobes radius mean") +
+labs(title="Distribution of diagnosis")+
+  # changing the color of the boxplots
+  scale_fill_manual(values = c( "dodgerblue1","red3")) 
+```
+
+### Figure 3: catter plot of the Concavity Mean Vs Radius Mean
+```{r}
+ggplot(df_c, aes(radius_mean, concavity_mean)) +
+  geom_point(aes(color = diagnosis)) +
+  labs(title = "Radious mean Vs Concavity mean",
+       y = "Mean of Concavity", x = "Radius of Lobes",
+       col="Type of The Tumor")+
+   scale_colour_manual(labels = c("Benign", "Malignant"),
+                       values = c("dodgerblue1","red2")) +
+  theme_bw()
+```
+
+### Machine Learning Analysis
+### Splitting the data into training set and test set
+```{r}
+# setting the independent variable to factor so that we can be able to fit it to the classification model
+df_c$diagnosis <- as.factor(df_c$diagnosis) 
+df_c <- df_c[,-1] #Removing ID column as it does not have correlation
+split=0.80 # define an 80%/20% train/test split of the dataset
+trainIndex <- createDataPartition(df_c$diagnosis, p=split, list=FALSE)
+data_train <- df_c[ trainIndex,]
+data_test <- df_c[-trainIndex,]
+```
+
+### Building a Cross validation Object
+```{r}
+#use train() and trainControl()
+train_control <- trainControl(method="cv", number=10)
+```
+
+### Building a K-Nearest Neighbor (KNN) Classification Model
+```{r}
+# train the model
+model1 <- train(diagnosis~., data=data_train, trControl=train_control,
+method="knn")
+predictions1<-predict(model1, newdata = data_test)
+```
+
+### Plotting Model1
+```{r}
+plot(model1)
+```
+
+### Checking The Accuracy Using Confusion Matrix
+```{r}
+cm1<-confusionMatrix(predictions1,data_test$diagnosis) # using confusion matrix for accuracy
+cm1
+```
+
+### Plotting The Confusion Matrix for K-Nearest Neighbor
+```{r}
+# making a data frame for the predicted and actual values
+cm1_plot <- data.frame(predictions1,data_test$diagnosis )
+# renaming the columns
+names(cm1_plot) <- c("Predicted", "Actual")
+
+
+cm1_plot <- conf_mat(cm1_plot,  Actual,Predicted)
+autoplot(cm1_plot, type = "heatmap") +
+  scale_fill_gradient(low="#D6EAF8",high = "#2E86C1") +
+  theme(legend.position = "right") + labs(title = "Confusion matrix for KNN model")
+```
+
+### Training a Decision Tree (DT) Model
+```{r}
+model2 <- ctree(diagnosis ~ ., data_train) # training the DT model
+predictions2<-predict(model2, newdata = data_test)
+```
+
+### Checking The Accuracy Using The Confusion Matrix
+```{r}
+cm2<-confusionMatrix(predictions2,data_test$diagnosis)
+cm2
+```
+
+### Plotting The Confusion Matrix for Decision Tree
+```{r}
+# making a data frame for the predicted and actual values
+cm2_plot <- data.frame(predictions2,data_test$diagnosis )
+# renaming the columns
+names(cm2_plot) <- c("Predicted", "Actual")
+
+
+cm2_plot <- conf_mat(cm2_plot,  Actual,Predicted)
+
+autoplot(cm2_plot, type = "heatmap") +
+  scale_fill_gradient(low="#D6EAF8",high = "#2E86C1") +
+  theme(legend.position = "right") + labs(title = "Confusion matrix for DT model")
+```
+
+
+## Question 2 - Mean of The Lobes Radius - Prediction
+
+### Making a Copy of The Data set for Regression Manipulation 
+```{r}
+# Picking the columns that are highly correlated with the mean of lobes radius
+df_R <- df[c("perimeter_mean", "area_mean" , "concave.points_mean", "radius_worst", 
+       "radius_worst", "perimeter_worst", "area_worst", "radius_mean" )]
+```
+
+### EDAs
+
+### Building a Correlation Matrix for The radius_mean Column
+```{r}
+cor(df_R)[,8]
+```
+### Figure 4: Scatter Plot for The Radius Mean Vs The Area Mean
+```{r}
+ggplot(df_R, aes(radius_mean, area_mean))+ 
+  geom_point(aes(alpha = 0.1))+ geom_smooth(method = "lm") + 
+  labs(title = "The mean of lobes radius Vs the mean of the lobes area",
+       y = "The mean of lobes areas", x = "The mean of lobes radius") +theme_bw()
+```
+
+### Figure 5: Scatter plot for The Radius Mean Vs The Perimeter Mean
+```{r}
+ggplot(df_R, aes(radius_mean, perimeter_mean))+ 
+  geom_point(aes(alpha = 0.1))+ geom_smooth(method = "lm") + 
+  labs(title = "The mean of lobes radius Vs the mean of the lobes perimeter", 
+       y = "The mean of lobes perimeter", x = "The mean of lobes radius") +theme_bw()
+```
+
+### Splitting The Data to Training and Testing Sets
+```{r}
+split=0.80 # define an 80%/20% train/test split of the dataset
+trainIndex <- createDataPartition(df_R$radius_mean, p=split, list=FALSE)
+data_train_R <- df_R[ trainIndex,]
+data_test_R <- df_R[-trainIndex,]
+```
+### Training The Multiple Linear Regression Model
+```{r}
+model3 <- lm(radius_mean ~ perimeter_mean+area_mean+concave.points_mean+radius_worst+radius_worst+
+               perimeter_worst+area_worst,data = data_train_R)
+
+```
+
+### Examining The Coefficient Table
+```{r}
+summary(model3)$coefficient
+```
+
+### Using The Model on The Test Data to Predict The Radius Mean
+```{r}
+prediction_R = predict(model3, newdata =data_test_R, interval = "prediction")
+head(prediction_R) #Exploring the head of our prediction table
+
+```
+
+### Figure 6: Scatter Plot for The Actual Values Vs the Predicted Values for Radius Mean
+```{r}
+# binding the predicted values with the actual ones
+act_pred <- as.data.frame(cbind(data_test_R$radius_mean,prediction_R )) 
+# taking only the predicted and actual values without the upper and lower boundaries
+act_pred <- act_pred[,1:2]
+#renaming the columns
+act_pred <- act_pred %>% rename( Actual= V1, predicted= fit )
+#assigning row names to Null to get rid of the unorganized index
+row.names(act_pred) <- NULL
+head(act_pred)
+ggplot(act_pred, aes(Actual, predicted)) +
+  geom_point(alpha = 0.4) + labs(title = "Predicted Values Vs Actual Values For Radius Mean"
+                      , x = "Actual Values of The Test Data",  "Predicted Values of The Test Data")+ theme_gray()
+```
+There is a perfect linear relationship between the actual and the predicted values
+
+### Checking The Accuarcy Using The Residual Standard Error (RSE), or Sigma:
+```{r}
+# The error rate can be estimated by dividing the RSE by the mean outcome variable:
+# the smaller the error the more accurate the model is.
+sigma(model3)/mean(data_test_R$radius_mean)
+```
+
+## Conclusion
+
+```
+Data Science and Statistics are powerful tools that can be used to predict disasters
+before happening. Breast cancer is a hideous disease, which has a strong negative impact on 
+society. In our project, we contributed to developing two supervised learning models, i.e.,
+Classification model using two techniques, namely, KNN method with a 91% prediction accuracy,
+and DT method with a ~90% accuracy. Moreover, we made a multiple linear regression statistical model
+that predict the mean of the lobes radius based on seven parameters with an RSE value of 0.02~0.03.
+```
+
